@@ -58,6 +58,7 @@ final class GitInspector
             changeCount: $changeCount,
             aheadCount: $aheadCount,
             behindCount: $behindCount,
+            remoteUrl: $this->resolveRemoteUrl($path),
         );
     }
 
@@ -107,6 +108,16 @@ final class GitInspector
         }
 
         return [(int) $parts[0], (int) $parts[1]];
+    }
+
+    /**
+     * The `origin` remote's URL, or `null` when there is none configured.
+     */
+    private function resolveRemoteUrl(string $path): ?string
+    {
+        $url = trim($this->run($path, ['remote', 'get-url', 'origin']) ?? '');
+
+        return $url !== '' ? $url : null;
     }
 
     /**

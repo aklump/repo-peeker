@@ -111,6 +111,7 @@ final class GitInspectorTest extends TestCase
         $summary = $node->summary;
         $this->assertSame(1, $summary->aheadCount);
         $this->assertSame(0, $summary->behindCount);
+        $this->assertSame('/nonexistent-remote', $summary->remoteUrl);
     }
 
     public function test_hydrate_summaries_reports_commits_behind_upstream(): void
@@ -149,6 +150,7 @@ final class GitInspectorTest extends TestCase
         $summary = $node->summary;
         $this->assertNull($summary->aheadCount);
         $this->assertNull($summary->behindCount);
+        $this->assertNull($summary->remoteUrl);
     }
 
     public function test_hydrate_summaries_only_touches_repo_nodes_and_recurses_into_children(): void

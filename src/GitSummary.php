@@ -17,6 +17,7 @@ final class GitSummary
         public readonly int $changeCount,
         public readonly ?int $aheadCount,
         public readonly ?int $behindCount,
+        public readonly ?string $remoteUrl,
     ) {}
 
     /**

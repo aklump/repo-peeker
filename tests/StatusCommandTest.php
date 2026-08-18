@@ -192,8 +192,9 @@ final class StatusCommandTest extends IntegrationTestCase
             ->call("status {$this->fixtureRoot} -L 2")
             ->assertSuccess()
             ->assertSee('clean-repo')
-            ->assertContainsFormattedText("\e[92m●\e[39m \e[92mmain\e[39m")
-            ->assertContainsFormattedText("\e[92m✓ clean\e[39m");
+            ->assertContainsFormattedText("\e[92m●\e[39m")
+            ->assertContainsFormattedText("\e[92mmain\e[39m")
+            ->assertContainsFormattedText("\e[92m✓\e[39m");
     }
 
     public function test_status_renders_a_dirty_repo_with_a_yellow_badge_and_change_count(): void
@@ -205,8 +206,9 @@ final class StatusCommandTest extends IntegrationTestCase
             ->call("status {$this->fixtureRoot} -L 2")
             ->assertSuccess()
             ->assertSee('dirty-repo')
-            ->assertContainsFormattedText("\e[93m●\e[39m \e[93mmain\e[39m")
-            ->assertContainsFormattedText("\e[93m✚ 1 changes\e[39m");
+            ->assertContainsFormattedText("\e[93m●\e[39m")
+            ->assertContainsFormattedText("\e[93mmain\e[39m")
+            ->assertContainsFormattedText("\e[93m\e[1m+1\e[39m\e[22m");
     }
 
     public function test_status_renders_a_detached_head_repo(): void
@@ -218,9 +220,9 @@ final class StatusCommandTest extends IntegrationTestCase
         $this->console
             ->call("status {$this->fixtureRoot} -L 2")
             ->assertSuccess()
-            ->assertSee('detached-repo')
-            ->assertSee("⎇ detached @{$sha}")
-            ->assertContainsFormattedText("\e[92m✓ clean\e[39m");
+            ->assertSee('⎇ detached-repo')
+            ->assertSee("detached @{$sha}")
+            ->assertContainsFormattedText("\e[92m✓\e[39m");
     }
 
     public function test_status_renders_ahead_and_behind_counts_relative_to_upstream(): void
@@ -238,8 +240,42 @@ final class StatusCommandTest extends IntegrationTestCase
             ->call("status {$this->fixtureRoot} -L 2")
             ->assertSuccess()
             ->assertSee('ahead-repo')
-            ->assertContainsFormattedText("\e[96m↑1\e[39m")
+            ->assertContainsFormattedText("\e[96m\e[1m↑1\e[39m\e[22m")
             ->assertNotSee('↓');
+    }
+
+    public function test_status_renders_the_remote_url_as_a_trailing_column_when_configured(): void
+    {
+        $repoPath = $this->makeGitRepo('remote-repo');
+        $this->git($repoPath, ['remote', 'add', 'origin', '/nonexistent-remote']);
+
+        $this->console
+            ->call("status {$this->fixtureRoot} -L 2")
+            ->assertSuccess()
+            ->assertSee('remote-repo')
+            ->assertContainsFormattedText("\e[2m/nonexistent-remote\e[22m");
+    }
+
+    public function test_status_hyperlinks_an_ssh_style_remote_to_its_https_equivalent(): void
+    {
+        $repoPath = $this->makeGitRepo('ssh-remote-repo');
+        $this->git($repoPath, ['remote', 'add', 'origin', 'git@github.com:aklump/repo-peeker.git']);
+
+        $this->console
+            ->call("status {$this->fixtureRoot} -L 2")
+            ->assertSuccess()
+            ->assertSee("\e]8;;https://github.com/aklump/repo-peeker\e\\");
+    }
+
+    public function test_status_omits_the_remote_url_column_when_there_is_no_remote(): void
+    {
+        $this->makeGitRepo('no-remote-repo');
+
+        $this->console
+            ->call("status {$this->fixtureRoot} -L 2")
+            ->assertSuccess()
+            ->assertSee('no-remote-repo')
+            ->assertNotSee("\e[2m");
     }
 
     private function makeGitRepo(string $relativeDir): string
