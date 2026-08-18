@@ -1,0 +1,7 @@
+{
+    "$schema": "vendor/humbug/box/res/schema.json",
+    "main": "bin/gitpeek",
+    "output": "gitpeek.phar",
+    "compression": "GZ",
+    "exclude-composer-files": false
+}

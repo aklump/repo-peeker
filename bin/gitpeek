@@ -14,7 +14,15 @@ if (count($_SERVER['argv']) < 2) {
     $_SERVER['argv'][] = 'status';
 }
 
-$container = Tempest::boot($root);
+// When running as a compiled .phar, $root points inside the (read-only)
+// archive, so Tempest's default internal storage location ($root/.tempest)
+// can't be created there. Redirect it to a writable, per-user cache
+// directory instead; a normal checkout keeps using $root/.tempest as before.
+$internalStorage = Phar::running() !== ''
+    ? sys_get_temp_dir() . '/gitpeek'
+    : null;
+
+$container = Tempest::boot($root, internalStorage: $internalStorage);
 
 $consoleConfig = $container->get(ConsoleConfig::class);
 $consoleConfig->name = 'gitpeek';

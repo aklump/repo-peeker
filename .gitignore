@@ -4,4 +4,6 @@
 
 # PHP / Composer
 /vendor/
+/vendor-bin/*/vendor/
 /.tempest/
+/gitpeek.phar
