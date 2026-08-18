@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en" data-knowledge-id="230040b9-6444-4e37-aa24-bc5d729fd65b">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+      <link rel="stylesheet" href="../../dist/node_modules/bootstrap/dist/css/bootstrap.css">
+      <link rel="stylesheet" href="../../dist/dist/bootstrap_theme.css">
+      <link rel="stylesheet" href="../../dist/node_modules/bootstrap-icons/font/bootstrap-icons.min.css">
+        <title>Repo Peeker (`gitpeek`) | Book Title</title>
+  </head>
+<body class="my-5">
+
+<header class="header bg-light fixed-top p-2 pt-1">
+  <div class="container-md">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="header__breadcrumbs flex-shrink-0 flex-grow-1 me-3">
+        <nav aria-label="breadcrumb">
+  <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item">
+      <a class="fw-bold" href="../../index.html">Book Title</a>
+    </li>
+    <li class="breadcrumb-item">
+      <a class="fw-bold" href="#" data-bs-toggle="offcanvas"
+         data-bs-target="#table-of-contents"
+         aria-controls="table-of-contents">TOC</a>
+    </li>
+    <li class="breadcrumb-item">
+      <a href="readme.html">General</a></li>
+  </ol>
+</nav>
+
+      </div>
+      <div class="header__tags me-3">  </div>
+      <div class="header__page-numbers flex-shrink-1">1
+        / 1</div>
+    </div>
+  </div>
+</header>
+
+<main class="container-md flex-column">
+  <div class="row mb-5 pt-5">
+    <article class="col">
+      <h1 class="mb-4 text-primary">Repo Peeker (`gitpeek`)</h1>
+      <p><img class="img-fluid" src="../../images/repo_peeker.jpg" alt="repo_peeker.jpg" /></p>
+<p>A standalone TempestPHP console application that walks a folder of projects
+to a <code>tree</code>-style depth limit and shows which directories are git
+repositories, along with their branch, dirty/clean state, and ahead/behind
+counts.</p>
+<pre><code>gitpeek status ~/Code -L 2
+gitpeek legend
+</code></pre>
+<h2>Build</h2>
+<p>Requires PHP <code>^8.4</code> and Composer.</p>
+<pre><code class="shell">composer install
+vendor/bin/box compile
+</code></pre>
+<p>This produces <code>gitpeek.phar</code> in the project root — a single file bundling
+the application and its production dependencies.</p>
+<blockquote class="blockquote"><p><code>box compile</code> is provided by <a href="https://github.com/box-project/box"><code>humbug/box</code></a>,
+installed via <a href="https://github.com/bamarni/composer-bin-plugin"><code>bamarni/composer-bin-plugin</code></a>
+into <code>vendor-bin/box</code> so its own build-time dependencies never pollute this
+project's dependency graph. A plain <code>composer install</code> at the project root
+installs it automatically — use a normal <code>composer install</code> here rather
+than <code>--no-dev</code>, since <code>bamarni/composer-bin-plugin</code> (and therefore <code>box</code>
+itself) is a dev dependency; <code>box compile</code> handles excluding dev-only
+files from the resulting phar on its own.</p>
+</blockquote>
+<h2>Install</h2>
+<p>Make the phar executable, drop the <code>.phar</code> extension, and move it onto your
+<code>$PATH</code>:</p>
+<pre><code class="shell">chmod +x gitpeek.phar
+mv gitpeek.phar ~/bin/gitpeek
+</code></pre>
+<p><code>gitpeek</code> now runs standalone from any directory on any machine with a PHP
+CLI binary — no <code>composer install</code> or project checkout required.</p>
+<pre><code class="shell">gitpeek status ~/Code -L 2
+gitpeek legend
+</code></pre>
+<h2>Usage</h2>
+<ul>
+<li><code>gitpeek status [path] [-L n]</code> — colored, tree-style listing of <code>path</code>
+(default <code>.</code>), capped at <code>n</code> levels deep (default <code>2</code>).</li>
+<li><code>gitpeek status [path] --nested</code> — also descend into detected repos to
+surface nested repos (submodules, vendored checkouts, etc.).</li>
+<li><code>gitpeek status [path] --full</code> — show the full, uncollapsed filesystem
+tree instead of the default path-collapsed compact view.</li>
+<li><code>gitpeek legend</code> — print the key explaining every symbol/color <code>status</code>
+uses.</li>
+<li><code>gitpeek status</code> with no arguments at all is equivalent to <code>gitpeek status .</code>.</li>
+</ul>
+<h2>Development</h2>
+<pre><code class="shell">composer install
+vendor/bin/phpunit
+</code></pre>
+<p><code>vendor/bin/phpunit</code> includes a smoke test (<code>tests/PharSmokeTest.php</code>) that
+builds <code>gitpeek.phar</code> and runs it as a real subprocess to verify the
+packaged artifact works end to end.</p>
+    </article>
+  </div>
+</main>
+
+  <footer class="footer d-flex justify-content-center">
+    <div class="flex-column justify-content-center">
+                    Last Update: <strong>8/18/2026</strong>
+          </div>
+  </footer>
+
+
+<nav class="nav d-flex justify-content-center align-items-center
+  fixed-bottom">
+  <div class="btn-group flex-fill">
+              <a href="readme.html" class="btn nav__prev-chapter btn-secondary"><i class="bi
+      bi-caret-left-fill"></i> Repo Peeker (`gitpeek`)</a>
+  
+    
+              <span class="btn nav__prev-page js-nav__prev-page
+    btn-primary"></span>
+  
+    
+    <a class="nav__toc btn btn-light" href="#"
+       data-bs-toggle="offcanvas"
+       data-bs-target="#table-of-contents"
+       aria-controls="table-of-contents"><i class="bi
+           bi-list-ol"></i></a>
+    
+              <span class="btn nav__next-page js-nav__next-page
+    btn-primary"></span>
+  
+    
+              <span class="btn nav__next-chapter btn-secondary "></span>
+  
+  </div>
+</nav>
+
+
+<div class="offcanvas offcanvas-start" tabindex="-1" id="table-of-contents"
+     aria-labelledby="table-of-contents__title" data-bs-keyboard="true">
+  <div class="offcanvas-header">
+    <h1 class="h6 offcanvas-title js-chapter-list-title"
+        id="table-of-contents__title">All
+      Chapters
+      &amp; Pages</h1>
+    <h1 class="d-none h6 offcanvas-title js-search-results-title"
+        id="table-of-contents__title">Search Results</h1>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+          <input class="js-search form-control mb-4" type="search"
+             placeholder="Search docs..."
+             aria-label="Search">
+      <div class="js-search-results d-none">
+        <h2 class="h4 mt-4">Matched Pages</h2>
+        <ol class="list-unstyled">
+                                              <li data-page="readme" value="1">
+      <a class="js-page-link" href="readme.html">Repo Peeker (`gitpeek`)<span
+              class="js-search-score
+              badge
+              bg-info rounded-pill badge-sm"></span></a>
+    </li>
+  
+                              </ol>
+      </div>
+        
+    <div class="js-chapter-list">
+              <h2 class="h4 mt-4">General</h2>
+        <ol>
+                                <li data-page="readme" value="1">
+      <a class="js-page-link" href="readme.html">Repo Peeker (`gitpeek`)</a>
+    </li>
+  
+                  </ol>
+          </div>
+  </div>
+</div>
+<div class="modal fade" id="modal" tabindex="-1"
+     aria-labelledby="modal-title" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="js-modal-title modal-title" id="modal-title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mt-1 mb-4">
+                  </p>
+        
+                
+        <ul class="list-group list-group-flush">
+                                    <a class="list-group-item list-group-item-action"
+                 data-tags="[]" href="readme.html">Repo Peeker (`gitpeek`)</a>
+                              </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script src="../../dist/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="../../dist/lunr.js"></script>
+  <script src="../../dist/knowledge.min.js"></script>
+
+</body>
+</html>

@@ -1,6 +1,11 @@
+<!--
+id: readme
+tags: ''
+-->
+
 # Repo Peeker (`gitpeek`)
 
-![repo_peeker.jpg](images/repo_peeker.jpg)
+![repo_peeker.jpg](../../images/repo_peeker.jpg)
 
 A standalone TempestPHP console application that walks a folder of projects
 to a `tree`-style depth limit and shows which directories are git

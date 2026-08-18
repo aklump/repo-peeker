@@ -1,0 +1,8 @@
+title: 'Book Title'
+uuid: 230040b9-6444-4e37-aa24-bc5d729fd65b
+chapters:
+  -
+    id: general
+    title: General
+    pages:
+      - readme

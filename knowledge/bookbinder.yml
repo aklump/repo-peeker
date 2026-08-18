@@ -1,0 +1,10 @@
+-
+  format: website
+  output: ../docs
+-
+  format: markdown
+  output: ../
+  special:
+    - copy images
+  pages:
+    - '**/README.md'
