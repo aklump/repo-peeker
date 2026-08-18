@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests;
 
 use PHPUnit\Framework\TestCase;
+use RepoPeeker\ConsoleCommands;
+use Tempest\Console\ConsoleConfig;
 use Tempest\Console\Testing\ConsoleTester;
 use Tempest\Container\Container;
 use Tempest\Core\FrameworkKernel;
@@ -35,6 +37,8 @@ abstract class IntegrationTestCase extends TestCase
         );
 
         $this->container = $this->kernel->container;
+
+        ConsoleCommands::restrictToApp($this->container->get(ConsoleConfig::class));
 
         $this->console = $this->container->get(ConsoleTester::class);
     }

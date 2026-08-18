@@ -1,12 +1,25 @@
 #!/usr/bin/env php
 <?php
 
+use RepoPeeker\ConsoleCommands;
 use Tempest\Console\ConsoleApplication;
+use Tempest\Console\ConsoleConfig;
+use Tempest\Core\Tempest;
 
 $root = dirname(__DIR__);
 
 require_once $root . '/vendor/autoload.php';
 
-ConsoleApplication::boot(name: 'gitpeek', root: $root)->run();
+if (count($_SERVER['argv']) < 2) {
+    $_SERVER['argv'][] = 'status';
+}
+
+$container = Tempest::boot($root);
+
+$consoleConfig = $container->get(ConsoleConfig::class);
+$consoleConfig->name = 'gitpeek';
+ConsoleCommands::restrictToApp($consoleConfig);
+
+$container->get(ConsoleApplication::class)->run();
 
 exit;

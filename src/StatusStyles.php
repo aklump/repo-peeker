@@ -42,7 +42,7 @@ final class StatusStyles
     /** Weight applied to a directory name and to a dirty repo's change count. */
     public const string STYLE_BOLD = 'bold';
 
-    /** Style used for a subtree with no repo beneath it (`--tree` only) and for the trailing remote URL column. */
+    /** Style used for a subtree with no repo beneath it (`--full` only) and for the trailing remote URL column. */
     public const string STYLE_DIM = 'dim';
 
     /**

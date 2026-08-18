@@ -28,7 +28,7 @@ final readonly class LegendCommand {
       $this->entry(
         StatusStyles::styled(StatusStyles::SYMBOL_REPO, StatusStyles::COLOR_CLEAN) . ' ' . StatusStyles::styled('<name>', StatusStyles::STYLE_BOLD),
         StatusStyles::SYMBOL_REPO . ' <name>',
-        'repository is clean — <name> is hyperlinked to its local path when your terminal supports it',
+        'repository is clean — <name> is hyperlinked to its local path when possible',
       ),
       $this->entry(
         StatusStyles::styled(StatusStyles::SYMBOL_REPO, StatusStyles::COLOR_DIRTY) . ' ' . StatusStyles::styled('<name>', StatusStyles::STYLE_BOLD),

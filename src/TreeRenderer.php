@@ -27,7 +27,7 @@ use Tempest\Console\Console;
  *
  * The raw-tree renderer (`render()`) keeps the Phase 1 dim/bold distinction
  * (dim for a subtree with no repo anywhere beneath it) since it is used for
- * `--tree`, the only view where "no repo anywhere beneath it" directories
+ * `--full`, the only view where "no repo anywhere beneath it" directories
  * still render at all. The compact-tree renderer (`renderCompact()`) never
  * dims: every surviving {@see DisplayNode} is either a repo itself or leads
  * to one, since {@see TreeCompactor} prunes everything else.

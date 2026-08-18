@@ -27,13 +27,13 @@ final class StatusCommandTest extends IntegrationTestCase
         parent::tearDown();
     }
 
-    public function test_status_tree_flag_renders_a_tree_with_repo_and_plain_directory_badges(): void
+    public function test_status_full_flag_renders_a_tree_with_repo_and_plain_directory_badges(): void
     {
         $this->makeDirs(['plain-project']);
         $this->makeGitRepo('git-project');
 
         $this->console
-            ->call("status {$this->fixtureRoot} -L 2 --tree")
+            ->call("status {$this->fixtureRoot} -L 2 --full")
             ->assertSuccess()
             ->assertSee($this->fixtureRoot)
             ->assertSee('plain-project')
@@ -41,45 +41,45 @@ final class StatusCommandTest extends IntegrationTestCase
             ->assertSee('●');
     }
 
-    public function test_status_tree_flag_dims_plain_directories_and_bolds_git_repos(): void
+    public function test_status_full_flag_dims_plain_directories_and_bolds_git_repos(): void
     {
         $this->makeDirs(['plain-project', 'git-project/.git']);
 
         $this->console
-            ->call("status {$this->fixtureRoot} -L 2 --tree")
+            ->call("status {$this->fixtureRoot} -L 2 --full")
             ->assertSuccess()
             ->assertContainsFormattedText("\e[2mplain-project\e[22m")
             ->assertContainsFormattedText("\e[1mgit-project\e[22m");
     }
 
-    public function test_status_tree_flag_bolds_a_plain_container_directory_that_holds_a_repo(): void
+    public function test_status_full_flag_bolds_a_plain_container_directory_that_holds_a_repo(): void
     {
         $this->makeDirs(['container/repo-project/.git', 'lonely-dir']);
 
         $this->console
-            ->call("status {$this->fixtureRoot} -L 3 --tree")
+            ->call("status {$this->fixtureRoot} -L 3 --full")
             ->assertSuccess()
             ->assertContainsFormattedText("\e[1mcontainer\e[22m")
             ->assertContainsFormattedText("\e[2mlonely-dir\e[22m");
     }
 
-    public function test_status_tree_flag_respects_the_depth_cap(): void
+    public function test_status_full_flag_respects_the_depth_cap(): void
     {
         $this->makeDirs(['level-1/level-2/level-3']);
 
         $this->console
-            ->call("status {$this->fixtureRoot} -L 1 --tree")
+            ->call("status {$this->fixtureRoot} -L 1 --full")
             ->assertSuccess()
             ->assertSee('level-1')
             ->assertNotSee('level-2');
     }
 
-    public function test_status_tree_flag_default_depth_is_two_when_l_is_omitted(): void
+    public function test_status_full_flag_default_depth_is_two_when_l_is_omitted(): void
     {
         $this->makeDirs(['level-1/level-2/level-3']);
 
         $this->console
-            ->call("status {$this->fixtureRoot} --tree")
+            ->call("status {$this->fixtureRoot} --full")
             ->assertSuccess()
             ->assertSee('level-1')
             ->assertSee('level-2')
@@ -118,7 +118,7 @@ final class StatusCommandTest extends IntegrationTestCase
             ->assertSee('js/repo');
     }
 
-    public function test_status_tree_flag_disables_pruning_and_shows_uninteresting_directories(): void
+    public function test_status_full_flag_disables_pruning_and_shows_uninteresting_directories(): void
     {
         $this->makeDirs([
             'directio/.idea',
@@ -126,7 +126,7 @@ final class StatusCommandTest extends IntegrationTestCase
         ]);
 
         $this->console
-            ->call("status {$this->fixtureRoot} -L 3 --tree")
+            ->call("status {$this->fixtureRoot} -L 3 --full")
             ->assertSuccess()
             ->assertSee('directio')
             ->assertSee('.idea')
@@ -283,7 +283,7 @@ final class StatusCommandTest extends IntegrationTestCase
         $this->makeDirs(['plain-project']);
 
         $this->console
-            ->call("status {$this->fixtureRoot} -L 2 --tree")
+            ->call("status {$this->fixtureRoot} -L 2 --full")
             ->assertSuccess()
             ->assertSee("\e]8;;{$this->fileUrl($this->fixtureRoot . '/plain-project')}\e\\");
     }

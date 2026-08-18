@@ -34,14 +34,14 @@ final readonly class StatusCommand
         bool $nested = false,
         #[ConsoleArgument(
             description: 'Show the full filesystem tree, uncollapsed',
-            aliases: ['--tree'],
+            aliases: ['--full'],
         )]
-        bool $tree = false,
+        bool $full = false,
     ): void {
         $walkedTree = $this->walker->walk($path, $depth, $nested);
         $this->gitInspector->hydrateSummaries($walkedTree);
 
-        if ($tree) {
+        if ($full) {
             $this->renderer->render($walkedTree, $this->console);
 
             return;
