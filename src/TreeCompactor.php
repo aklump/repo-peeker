@@ -23,7 +23,7 @@ final class TreeCompactor
 {
     public function compact(Node $root): DisplayNode
     {
-        $display = new DisplayNode($root->path, $root->isGitRepo, $root->summary);
+        $display = new DisplayNode($root->path, $root->isGitRepo, $root->summary, $root->path);
         $display->children = $this->compactChildren($root->children);
 
         return $display;
@@ -64,13 +64,13 @@ final class TreeCompactor
             // a row ends up joined into a single line (e.g. `a/b/repo`).
             $onlyChild = $children[0];
 
-            $merged = new DisplayNode("{$node->name()}/{$onlyChild->label}", $onlyChild->isGitRepo, $onlyChild->summary);
+            $merged = new DisplayNode("{$node->name()}/{$onlyChild->label}", $onlyChild->isGitRepo, $onlyChild->summary, $onlyChild->path);
             $merged->children = $onlyChild->children;
 
             return $merged;
         }
 
-        $display = new DisplayNode($node->name(), $node->isGitRepo, $node->summary);
+        $display = new DisplayNode($node->name(), $node->isGitRepo, $node->summary, $node->path);
         $display->children = $children;
 
         return $display;

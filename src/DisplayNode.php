@@ -21,6 +21,13 @@ final class DisplayNode
     public function __construct(
         public readonly string $label,
         public readonly bool $isGitRepo,
-        public readonly ?GitSummary $summary = null,
+        public readonly ?GitSummary $summary,
+        /**
+         * The real filesystem path this row represents. For a merged chain
+         * (e.g. `directio/app`), this is the innermost node's path (`app`),
+         * not the outer directory the label starts with — clicking the row
+         * should jump to the directory the row is actually about.
+         */
+        public readonly string $path,
     ) {}
 }

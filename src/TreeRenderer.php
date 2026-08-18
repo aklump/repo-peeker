@@ -20,6 +20,11 @@ use Tempest\Console\Console;
  * (see `webUrl()`) so SSH-style remotes are clickable too. Plain directories
  * never carry a {@see GitSummary} and render as a bare label.
  *
+ * Every row's name — repo or plain directory alike — is itself wrapped in a
+ * terminal hyperlink escape pointing at a `file://` URI for its real local
+ * path (see `fileUrl()`), so clicking it opens that directory the same way
+ * clicking any other path in the terminal would.
+ *
  * The raw-tree renderer (`render()`) keeps the Phase 1 dim/bold distinction
  * (dim for a subtree with no repo anywhere beneath it) since it is used for
  * `--tree`, the only view where "no repo anywhere beneath it" directories
@@ -36,12 +41,9 @@ use Tempest\Console\Console;
  */
 final class TreeRenderer
 {
-    /** Badge shown before a git repository's name. */
-    public const string REPO_BADGE = "<style='fg-green'>●</style>";
-
     public function render(Node $root, Console $console): void
     {
-        $rows = [$this->makeRow('', $root->path, dim: false, isRepo: $root->isGitRepo, summary: $root->summary)];
+        $rows = [$this->makeRow('', $root->path, dim: false, isRepo: $root->isGitRepo, summary: $root->summary, path: $root->path)];
         $this->collectRawChildren($root->children, '', $rows);
 
         $this->writeRows($rows, $console);
@@ -49,7 +51,7 @@ final class TreeRenderer
 
     public function renderCompact(DisplayNode $root, Console $console): void
     {
-        $rows = [$this->makeRow('', $root->label, dim: false, isRepo: $root->isGitRepo, summary: $root->summary)];
+        $rows = [$this->makeRow('', $root->label, dim: false, isRepo: $root->isGitRepo, summary: $root->summary, path: $root->path)];
         $this->collectCompactChildren($root->children, '', $rows);
 
         $this->writeRows($rows, $console);
@@ -57,7 +59,7 @@ final class TreeRenderer
 
     /**
      * @param Node[] $children
-     * @param list<array{prefix:string,label:string,dim:bool,isRepo:bool,summary:?GitSummary}> $rows
+     * @param list<array{prefix:string,label:string,dim:bool,isRepo:bool,summary:?GitSummary,path:string}> $rows
      */
     private function collectRawChildren(array $children, string $prefix, array &$rows): void
     {
@@ -69,7 +71,7 @@ final class TreeRenderer
             $childPrefix = $prefix . ($isLast ? '    ' : '│   ');
             $dim = ! $child->isGitRepo && ! $child->hasRepoDescendant();
 
-            $rows[] = $this->makeRow($prefix . $branch, $child->name(), $dim, $child->isGitRepo, $child->summary);
+            $rows[] = $this->makeRow($prefix . $branch, $child->name(), $dim, $child->isGitRepo, $child->summary, $child->path);
 
             $this->collectRawChildren($child->children, $childPrefix, $rows);
         }
@@ -77,7 +79,7 @@ final class TreeRenderer
 
     /**
      * @param DisplayNode[] $children
-     * @param list<array{prefix:string,label:string,dim:bool,isRepo:bool,summary:?GitSummary}> $rows
+     * @param list<array{prefix:string,label:string,dim:bool,isRepo:bool,summary:?GitSummary,path:string}> $rows
      */
     private function collectCompactChildren(array $children, string $prefix, array &$rows): void
     {
@@ -88,22 +90,22 @@ final class TreeRenderer
             $branch = $isLast ? '└── ' : '├── ';
             $childPrefix = $prefix . ($isLast ? '    ' : '│   ');
 
-            $rows[] = $this->makeRow($prefix . $branch, $child->label, dim: false, isRepo: $child->isGitRepo, summary: $child->summary);
+            $rows[] = $this->makeRow($prefix . $branch, $child->label, dim: false, isRepo: $child->isGitRepo, summary: $child->summary, path: $child->path);
 
             $this->collectCompactChildren($child->children, $childPrefix, $rows);
         }
     }
 
     /**
-     * @return array{prefix:string,label:string,dim:bool,isRepo:bool,summary:?GitSummary}
+     * @return array{prefix:string,label:string,dim:bool,isRepo:bool,summary:?GitSummary,path:string}
      */
-    private function makeRow(string $prefix, string $label, bool $dim, bool $isRepo, ?GitSummary $summary): array
+    private function makeRow(string $prefix, string $label, bool $dim, bool $isRepo, ?GitSummary $summary, string $path): array
     {
-        return ['prefix' => $prefix, 'label' => $label, 'dim' => $dim, 'isRepo' => $isRepo, 'summary' => $summary];
+        return ['prefix' => $prefix, 'label' => $label, 'dim' => $dim, 'isRepo' => $isRepo, 'summary' => $summary, 'path' => $path];
     }
 
     /**
-     * @param list<array{prefix:string,label:string,dim:bool,isRepo:bool,summary:?GitSummary}> $rows
+     * @param list<array{prefix:string,label:string,dim:bool,isRepo:bool,summary:?GitSummary,path:string}> $rows
      */
     private function writeRows(array $rows, Console $console): void
     {
@@ -119,7 +121,7 @@ final class TreeRenderer
      * every repo row, since only repo rows have columns that need to line up
      * (the trailing remote URL is rendered last and needs no padding).
      *
-     * @param list<array{prefix:string,label:string,dim:bool,isRepo:bool,summary:?GitSummary}> $rows
+     * @param list<array{prefix:string,label:string,dim:bool,isRepo:bool,summary:?GitSummary,path:string}> $rows
      *
      * @return array{0:int,1:int,2:int,3:int}
      */
@@ -152,21 +154,23 @@ final class TreeRenderer
     }
 
     /**
-     * @param array{prefix:string,label:string,dim:bool,isRepo:bool,summary:?GitSummary} $row
+     * @param array{prefix:string,label:string,dim:bool,isRepo:bool,summary:?GitSummary,path:string} $row
      */
     private function renderRow(array $row, int $nameWidth, int $changesWidth, int $abWidth, int $branchWidth): string
     {
         if (! $row['isRepo']) {
-            $labelStyle = $row['dim'] ? 'dim' : 'bold';
+            $labelStyle = $row['dim'] ? StatusStyles::STYLE_DIM : StatusStyles::STYLE_BOLD;
+            $name = $this->hyperlink(StatusStyles::styled($row['label'], $labelStyle), $this->fileUrl($row['path']));
 
-            return $row['prefix'] . "<style='{$labelStyle}'>{$row['label']}</style>";
+            return $row['prefix'] . $name;
         }
 
         $segments = $this->repoSegments($row['label'], $row['summary']);
+        $name = $this->hyperlink($segments['nameStyled'], $this->fileUrl($row['path']));
 
         $line = $row['prefix']
             . $segments['badgeStyled'] . ' '
-            . $segments['nameStyled'] . $this->gap($nameWidth - mb_strlen($row['prefix'] . $row['label']));
+            . $name . $this->gap($nameWidth - mb_strlen($row['prefix'] . $row['label']));
 
         if ($row['summary'] === null) {
             return $line;
@@ -190,11 +194,38 @@ final class TreeRenderer
             return $line;
         }
 
-        $display = "<style='dim'>{$remoteUrl}</style>";
+        $display = StatusStyles::styled($remoteUrl, StatusStyles::STYLE_DIM);
         $webUrl = $this->webUrl($remoteUrl);
         $remoteField = $webUrl === null ? $display : $this->hyperlink($display, $webUrl);
 
         return $line . $this->gap($branchWidth - mb_strlen($segments['branchPlain'])) . '  ' . $remoteField;
+    }
+
+    /**
+     * Resolves `$path` to a `file://` URI so the name column is clickable in
+     * terminals that support hyperlink escapes — jumping to the row's real
+     * local directory (Finder/Explorer/file manager, whatever the OS opens a
+     * directory with), the same way `webUrl()` makes the remote column
+     * clickable. `$path` may be relative to the invoking cwd (e.g. when
+     * `status` was run against `.`), so it's resolved to an absolute path
+     * via `realpath()` first — the displayed label is untouched, only the
+     * link target changes.
+     */
+    private function fileUrl(string $path): string
+    {
+        $normalized = str_replace('\\', '/', realpath($path) ?: $path);
+
+        // Windows drive-letter paths (e.g. `C:/Users/...`) need a leading
+        // slash after the `file://` authority and an unencoded drive colon.
+        if (preg_match('#^([A-Za-z]):/(.*)$#', $normalized, $matches)) {
+            $encoded = implode('/', array_map('rawurlencode', explode('/', $matches[2])));
+
+            return "file:///{$matches[1]}:/{$encoded}";
+        }
+
+        $encoded = implode('/', array_map('rawurlencode', explode('/', $normalized)));
+
+        return "file://{$encoded}";
     }
 
     /**
@@ -245,9 +276,9 @@ final class TreeRenderer
         if ($summary === null) {
             // Defensive fallback: hydration didn't run for this node.
             return [
-                'badgePlain' => '●',
-                'badgeStyled' => self::REPO_BADGE,
-                'nameStyled' => "<style='bold'>{$label}</style>",
+                'badgePlain' => StatusStyles::SYMBOL_REPO,
+                'badgeStyled' => StatusStyles::styled(StatusStyles::SYMBOL_REPO, StatusStyles::COLOR_CLEAN),
+                'nameStyled' => StatusStyles::styled($label, StatusStyles::STYLE_BOLD),
                 'abPlain' => '',
                 'abStyled' => '',
                 'changesPlain' => '',
@@ -257,25 +288,30 @@ final class TreeRenderer
             ];
         }
 
-        $statusColor = $summary->isClean() ? 'fg-green' : 'fg-yellow';
+        $statusColor = $summary->isClean() ? StatusStyles::COLOR_CLEAN : StatusStyles::COLOR_DIRTY;
 
         $abPlain = $this->plainAheadBehind($summary);
         $branchPlain = $summary->isDetached ? "detached @{$summary->headSha}" : $summary->branch;
 
         return [
-            'badgePlain' => $summary->isDetached ? '⎇' : '●',
-            'badgeStyled' => $summary->isDetached ? '⎇' : "<style='{$statusColor}'>●</style>",
-            'nameStyled' => "<style='bold'>{$label}</style>",
+            'badgePlain' => $summary->isDetached ? StatusStyles::SYMBOL_DETACHED : StatusStyles::SYMBOL_REPO,
+            'badgeStyled' => $summary->isDetached
+                ? StatusStyles::SYMBOL_DETACHED
+                : StatusStyles::styled(StatusStyles::SYMBOL_REPO, $statusColor),
+            'nameStyled' => StatusStyles::styled($label, StatusStyles::STYLE_BOLD),
             'abPlain' => $abPlain,
             'abStyled' => $abPlain === '' ? '' : $this->styledAheadBehind($summary),
-            'changesPlain' => $summary->isClean() ? '✓' : "+{$summary->changeCount}",
+            'changesPlain' => $summary->isClean() ? StatusStyles::SYMBOL_CLEAN : StatusStyles::CHANGE_PREFIX . $summary->changeCount,
             'changesStyled' => $summary->isClean()
-                ? "<style='fg-green'>✓</style>"
-                : "<style='fg-yellow bold'>+{$summary->changeCount}</style>",
+                ? StatusStyles::styled(StatusStyles::SYMBOL_CLEAN, StatusStyles::COLOR_CLEAN)
+                : StatusStyles::styled(
+                    StatusStyles::CHANGE_PREFIX . $summary->changeCount,
+                    StatusStyles::COLOR_DIRTY . ' ' . StatusStyles::STYLE_BOLD,
+                ),
             'branchPlain' => $branchPlain,
             'branchStyled' => $summary->isDetached
                 ? $branchPlain
-                : "<style='{$statusColor}'>{$branchPlain}</style>",
+                : StatusStyles::styled($branchPlain, $statusColor),
         ];
     }
 
@@ -284,11 +320,11 @@ final class TreeRenderer
         $parts = [];
 
         if ($summary->aheadCount !== null && $summary->aheadCount > 0) {
-            $parts[] = "↑{$summary->aheadCount}";
+            $parts[] = StatusStyles::SYMBOL_AHEAD . $summary->aheadCount;
         }
 
         if ($summary->behindCount !== null && $summary->behindCount > 0) {
-            $parts[] = "↓{$summary->behindCount}";
+            $parts[] = StatusStyles::SYMBOL_BEHIND . $summary->behindCount;
         }
 
         return implode('  ', $parts);
@@ -299,11 +335,11 @@ final class TreeRenderer
         $parts = [];
 
         if ($summary->aheadCount !== null && $summary->aheadCount > 0) {
-            $parts[] = "<style='fg-cyan bold'>↑{$summary->aheadCount}</style>";
+            $parts[] = StatusStyles::styled(StatusStyles::SYMBOL_AHEAD . $summary->aheadCount, StatusStyles::COLOR_AHEAD_BEHIND);
         }
 
         if ($summary->behindCount !== null && $summary->behindCount > 0) {
-            $parts[] = "<style='fg-cyan bold'>↓{$summary->behindCount}</style>";
+            $parts[] = StatusStyles::styled(StatusStyles::SYMBOL_BEHIND . $summary->behindCount, StatusStyles::COLOR_AHEAD_BEHIND);
         }
 
         return implode('  ', $parts);

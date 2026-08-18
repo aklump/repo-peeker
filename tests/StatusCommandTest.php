@@ -220,7 +220,8 @@ final class StatusCommandTest extends IntegrationTestCase
         $this->console
             ->call("status {$this->fixtureRoot} -L 2")
             ->assertSuccess()
-            ->assertSee('⎇ detached-repo')
+            ->assertSee('⎇')
+            ->assertSee('detached-repo')
             ->assertSee("detached @{$sha}")
             ->assertContainsFormattedText("\e[92m✓\e[39m");
     }
@@ -267,6 +268,37 @@ final class StatusCommandTest extends IntegrationTestCase
             ->assertSee("\e]8;;https://github.com/aklump/repo-peeker\e\\");
     }
 
+    public function test_status_hyperlinks_a_repo_name_to_its_local_file_url(): void
+    {
+        $repoPath = $this->makeGitRepo('linked-repo');
+
+        $this->console
+            ->call("status {$this->fixtureRoot} -L 2")
+            ->assertSuccess()
+            ->assertSee("\e]8;;{$this->fileUrl($repoPath)}\e\\");
+    }
+
+    public function test_status_hyperlinks_a_plain_directorys_name_to_its_local_file_url_under_tree(): void
+    {
+        $this->makeDirs(['plain-project']);
+
+        $this->console
+            ->call("status {$this->fixtureRoot} -L 2 --tree")
+            ->assertSuccess()
+            ->assertSee("\e]8;;{$this->fileUrl($this->fixtureRoot . '/plain-project')}\e\\");
+    }
+
+    public function test_status_hyperlinks_a_collapsed_names_local_file_url_to_its_innermost_directory(): void
+    {
+        $this->makeDirs(['directio/app/.git']);
+
+        $this->console
+            ->call("status {$this->fixtureRoot} -L 3")
+            ->assertSuccess()
+            ->assertSee('directio/app')
+            ->assertSee("\e]8;;{$this->fileUrl($this->fixtureRoot . '/directio/app')}\e\\");
+    }
+
     public function test_status_omits_the_remote_url_column_when_there_is_no_remote(): void
     {
         $this->makeGitRepo('no-remote-repo');
@@ -311,6 +343,18 @@ final class StatusCommandTest extends IntegrationTestCase
         $process->mustRun();
 
         return trim($process->getOutput());
+    }
+
+    /**
+     * Mirrors {@see \RepoPeeker\TreeRenderer::fileUrl()} so tests assert
+     * against the same `file://` URI the renderer actually builds, rather
+     * than a hardcoded guess that could silently drift from it.
+     */
+    private function fileUrl(string $path): string
+    {
+        $resolved = realpath($path) ?: $path;
+
+        return 'file://' . implode('/', array_map('rawurlencode', explode('/', $resolved)));
     }
 
     /**

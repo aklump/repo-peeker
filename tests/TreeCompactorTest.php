@@ -41,6 +41,7 @@ final class TreeCompactorTest extends TestCase
         $this->assertSame('directio/app', $merged->label);
         $this->assertTrue($merged->isGitRepo);
         $this->assertSame([], $merged->children);
+        $this->assertSame('/root/directio/app', $merged->path, 'A merged row must link to its innermost real directory, not the outer one its label starts with.');
     }
 
     public function test_a_plain_directory_with_two_or_more_interesting_children_is_not_collapsed(): void
@@ -81,6 +82,7 @@ final class TreeCompactorTest extends TestCase
         $merged = $display->children[0];
         $this->assertSame('a/b/repo', $merged->label, 'A chain of single-child plain directories must fold into one joined line.');
         $this->assertTrue($merged->isGitRepo, 'The repo status must survive being folded through a chain of merges.');
+        $this->assertSame('/root/a/b/repo', $merged->path, 'The path must survive being folded through a chain of merges, pointing at the innermost directory.');
     }
 
     public function test_root_is_never_merged_into_a_child_even_with_exactly_one_interesting_child(): void
@@ -93,9 +95,11 @@ final class TreeCompactorTest extends TestCase
         $display = $this->compactor->compact($root);
 
         $this->assertSame('/root/only-project', $display->label, 'Root must always render on its own line, never merged into a child.');
+        $this->assertSame('/root/only-project', $display->path);
         $this->assertCount(1, $display->children);
         $this->assertSame('repo', $display->children[0]->label);
         $this->assertTrue($display->children[0]->isGitRepo);
+        $this->assertSame('/root/only-project/repo', $display->children[0]->path);
     }
 
     public function test_a_subtree_with_no_git_repo_anywhere_beneath_it_is_pruned_entirely(): void
