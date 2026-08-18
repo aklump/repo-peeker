@@ -15,6 +15,7 @@ final readonly class StatusCommand
     public function __construct(
         private DirectoryWalker $walker,
         private TreeRenderer $renderer,
+        private TreeCompactor $compactor,
     ) {}
 
     #[ConsoleCommand(name: 'status', aliases: ['st'], description: 'Show git status for a folder of projects')]
@@ -30,9 +31,29 @@ final readonly class StatusCommand
             aliases: ['--nested'],
         )]
         bool $nested = false,
+        #[ConsoleArgument(
+            description: 'Show the full filesystem tree, uncollapsed',
+            aliases: ['--tree'],
+        )]
+        bool $tree = false,
     ): void {
-        $tree = $this->walker->walk($path, $depth, $nested);
+        $walkedTree = $this->walker->walk($path, $depth, $nested);
 
-        $this->renderer->render($tree, $this->console);
+        if ($tree) {
+            $this->renderer->render($walkedTree, $this->console);
+
+            return;
+        }
+
+        $compactTree = $this->compactor->compact($walkedTree);
+
+        if (! $compactTree->isGitRepo && $compactTree->children === []) {
+            $this->console->writeln('No git repositories found');
+            $this->renderer->render($walkedTree, $this->console);
+
+            return;
+        }
+
+        $this->renderer->renderCompact($compactTree, $this->console);
     }
 }
