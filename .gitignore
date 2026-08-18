@@ -1,0 +1,7 @@
+
+# Riptide artifacts (cloud-synced)
+.humanlayer/tasks/
+
+# PHP / Composer
+/vendor/
+/.tempest/

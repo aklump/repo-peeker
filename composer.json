@@ -1,0 +1,31 @@
+{
+    "name": "aklump/repo-peeker",
+    "description": "Repo Peeker (gitpeek) - a TempestPHP console tool that inspects a folder of git projects, tree-style.",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": "^8.4",
+        "tempest/console": "^2.14"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "RepoPeeker\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/gitpeek"
+    ],
+    "scripts": {
+        "phpunit": "vendor/bin/phpunit --display-warnings --display-skipped --display-deprecations --display-errors --display-notices"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
