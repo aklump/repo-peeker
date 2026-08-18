@@ -12,6 +12,12 @@ final class Node
     /** @var Node[] */
     public array $children = [];
 
+    /**
+     * Populated by {@see GitInspector::hydrateSummaries()} for repo nodes
+     * only; remains `null` for plain directories and until hydration runs.
+     */
+    public ?GitSummary $summary = null;
+
     public function __construct(
         public readonly string $path,
         public readonly bool $isGitRepo,

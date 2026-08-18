@@ -16,6 +16,7 @@ final readonly class StatusCommand
         private DirectoryWalker $walker,
         private TreeRenderer $renderer,
         private TreeCompactor $compactor,
+        private GitInspector $gitInspector,
     ) {}
 
     #[ConsoleCommand(name: 'status', aliases: ['st'], description: 'Show git status for a folder of projects')]
@@ -38,6 +39,7 @@ final readonly class StatusCommand
         bool $tree = false,
     ): void {
         $walkedTree = $this->walker->walk($path, $depth, $nested);
+        $this->gitInspector->hydrateSummaries($walkedTree);
 
         if ($tree) {
             $this->renderer->render($walkedTree, $this->console);

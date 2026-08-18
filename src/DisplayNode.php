@@ -21,5 +21,6 @@ final class DisplayNode
     public function __construct(
         public readonly string $label,
         public readonly bool $isGitRepo,
+        public readonly ?GitSummary $summary = null,
     ) {}
 }

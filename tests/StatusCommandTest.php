@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use Symfony\Component\Process\Process;
+
 /**
  * @internal
  */
@@ -27,10 +29,8 @@ final class StatusCommandTest extends IntegrationTestCase
 
     public function test_status_tree_flag_renders_a_tree_with_repo_and_plain_directory_badges(): void
     {
-        $this->makeDirs([
-            'plain-project',
-            'git-project/.git',
-        ]);
+        $this->makeDirs(['plain-project']);
+        $this->makeGitRepo('git-project');
 
         $this->console
             ->call("status {$this->fixtureRoot} -L 2 --tree")
@@ -147,7 +147,13 @@ final class StatusCommandTest extends IntegrationTestCase
 
     public function test_status_does_not_report_no_repos_found_when_the_root_itself_is_a_repo(): void
     {
-        $this->makeDirs(['.git']);
+        mkdir($this->fixtureRoot, recursive: true);
+        $this->git($this->fixtureRoot, ['init', '-b', 'main']);
+        $this->git($this->fixtureRoot, ['config', 'user.email', 'test@example.com']);
+        $this->git($this->fixtureRoot, ['config', 'user.name', 'Test']);
+        file_put_contents($this->fixtureRoot . '/file.txt', "hello\n");
+        $this->git($this->fixtureRoot, ['add', '.']);
+        $this->git($this->fixtureRoot, ['commit', '-m', 'initial commit']);
 
         $this->console
             ->call("status {$this->fixtureRoot} -L 2")
@@ -176,6 +182,99 @@ final class StatusCommandTest extends IntegrationTestCase
             ->assertSuccess()
             ->assertSee('outer-repo')
             ->assertSee('inner-repo');
+    }
+
+    public function test_status_renders_a_clean_repo_with_a_green_badge_branch_and_clean_cue(): void
+    {
+        $this->makeGitRepo('clean-repo');
+
+        $this->console
+            ->call("status {$this->fixtureRoot} -L 2")
+            ->assertSuccess()
+            ->assertSee('clean-repo')
+            ->assertContainsFormattedText("\e[92m●\e[39m \e[92mmain\e[39m")
+            ->assertContainsFormattedText("\e[92m✓ clean\e[39m");
+    }
+
+    public function test_status_renders_a_dirty_repo_with_a_yellow_badge_and_change_count(): void
+    {
+        $repoPath = $this->makeGitRepo('dirty-repo');
+        file_put_contents($repoPath . '/file.txt', "modified\n");
+
+        $this->console
+            ->call("status {$this->fixtureRoot} -L 2")
+            ->assertSuccess()
+            ->assertSee('dirty-repo')
+            ->assertContainsFormattedText("\e[93m●\e[39m \e[93mmain\e[39m")
+            ->assertContainsFormattedText("\e[93m✚ 1 changes\e[39m");
+    }
+
+    public function test_status_renders_a_detached_head_repo(): void
+    {
+        $repoPath = $this->makeGitRepo('detached-repo');
+        $sha = $this->gitOutput($repoPath, ['rev-parse', '--short', 'HEAD']);
+        $this->git($repoPath, ['checkout', '--detach', $sha]);
+
+        $this->console
+            ->call("status {$this->fixtureRoot} -L 2")
+            ->assertSuccess()
+            ->assertSee('detached-repo')
+            ->assertSee("⎇ detached @{$sha}")
+            ->assertContainsFormattedText("\e[92m✓ clean\e[39m");
+    }
+
+    public function test_status_renders_ahead_and_behind_counts_relative_to_upstream(): void
+    {
+        $repoPath = $this->makeGitRepo('ahead-repo');
+        $baseSha = $this->gitOutput($repoPath, ['rev-parse', 'HEAD']);
+        $this->git($repoPath, ['remote', 'add', 'origin', '/nonexistent-remote']);
+        $this->git($repoPath, ['update-ref', 'refs/remotes/origin/main', $baseSha]);
+        $this->git($repoPath, ['branch', '--set-upstream-to=origin/main', 'main']);
+        file_put_contents($repoPath . '/file.txt', "second\n");
+        $this->git($repoPath, ['add', '.']);
+        $this->git($repoPath, ['commit', '-m', 'second commit']);
+
+        $this->console
+            ->call("status {$this->fixtureRoot} -L 2")
+            ->assertSuccess()
+            ->assertSee('ahead-repo')
+            ->assertContainsFormattedText("\e[96m↑1\e[39m")
+            ->assertNotSee('↓');
+    }
+
+    private function makeGitRepo(string $relativeDir): string
+    {
+        $repoPath = $this->fixtureRoot . '/' . $relativeDir;
+        mkdir($repoPath, recursive: true);
+
+        $this->git($repoPath, ['init', '-b', 'main']);
+        $this->git($repoPath, ['config', 'user.email', 'test@example.com']);
+        $this->git($repoPath, ['config', 'user.name', 'Test']);
+
+        file_put_contents($repoPath . '/file.txt', "hello\n");
+        $this->git($repoPath, ['add', '.']);
+        $this->git($repoPath, ['commit', '-m', 'initial commit']);
+
+        return $repoPath;
+    }
+
+    /**
+     * @param string[] $arguments
+     */
+    private function git(string $repoPath, array $arguments): void
+    {
+        (new Process(['git', '-C', $repoPath, ...$arguments]))->mustRun();
+    }
+
+    /**
+     * @param string[] $arguments
+     */
+    private function gitOutput(string $repoPath, array $arguments): string
+    {
+        $process = new Process(['git', '-C', $repoPath, ...$arguments]);
+        $process->mustRun();
+
+        return trim($process->getOutput());
     }
 
     /**

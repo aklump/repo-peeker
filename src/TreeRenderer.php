@@ -10,9 +10,12 @@ use Tempest\Console\Console;
  * Renders either a raw {@see Node} tree or a compacted {@see DisplayNode}
  * tree as colored `tree`-style output.
  *
- * Phase 1 only distinguishes git repos from plain directories via a badge
- * (a green `●` for repos, no badge for plain directories). Branch/dirty
- * state/ahead-behind detail is added on top of the repo badge in Phase 3.
+ * Every git repo row (whether from the raw or compact tree) renders the
+ * full status line hydrated by {@see GitInspector::hydrateSummaries()}: a
+ * green/yellow `●`/branch pair (or a neutral `⎇ detached @<sha>` for
+ * detached HEAD), a `✓ clean`/`✚ N changes` cue, and cyan `↑N`/`↓N`
+ * ahead/behind counts when non-zero. Plain directories never carry a
+ * {@see GitSummary} and render as a bare label.
  *
  * The raw-tree renderer (`render()`) keeps the Phase 1 dim/bold distinction
  * (dim for a subtree with no repo anywhere beneath it) since it is used for
@@ -28,18 +31,14 @@ final class TreeRenderer
 
     public function render(Node $root, Console $console): void
     {
-        $badge = $root->isGitRepo ? '  ' . self::REPO_BADGE : '';
-
-        $console->writeln("<style='bold'>{$root->path}</style>{$badge}");
+        $console->writeln($this->renderRootLine($root->path, $root->isGitRepo, $root->summary));
 
         $this->renderChildren($root->children, '', $console);
     }
 
     public function renderCompact(DisplayNode $root, Console $console): void
     {
-        $badge = $root->isGitRepo ? '  ' . self::REPO_BADGE : '';
-
-        $console->writeln("<style='bold'>{$root->label}</style>{$badge}");
+        $console->writeln($this->renderRootLine($root->label, $root->isGitRepo, $root->summary));
 
         $this->renderCompactChildren($root->children, '', $console);
     }
@@ -82,10 +81,19 @@ final class TreeRenderer
         }
     }
 
+    private function renderRootLine(string $label, bool $isGitRepo, ?GitSummary $summary): string
+    {
+        if ($isGitRepo) {
+            return $this->renderRepoLine($label, $summary);
+        }
+
+        return "<style='bold'>{$label}</style>";
+    }
+
     private function renderLine(Node $node): string
     {
         if ($node->isGitRepo) {
-            return "<style='bold'>{$node->name()}</style>  " . self::REPO_BADGE;
+            return $this->renderRepoLine($node->name(), $node->summary);
         }
 
         if ($node->hasRepoDescendant()) {
@@ -98,9 +106,51 @@ final class TreeRenderer
     private function renderCompactLine(DisplayNode $node): string
     {
         if ($node->isGitRepo) {
-            return "<style='bold'>{$node->label}</style>  " . self::REPO_BADGE;
+            return $this->renderRepoLine($node->label, $node->summary);
         }
 
         return "<style='bold'>{$node->label}</style>";
+    }
+
+    /**
+     * Renders a git repo's full status line: bold name, branch/detached
+     * badge, clean/dirty cue, and ahead/behind counts, matching the
+     * approved output mock exactly.
+     */
+    private function renderRepoLine(string $label, ?GitSummary $summary): string
+    {
+        $name = "<style='bold'>{$label}</style>";
+
+        if ($summary === null) {
+            // Defensive fallback: hydration didn't run for this node.
+            return "{$name}  " . self::REPO_BADGE;
+        }
+
+        $statusColor = $summary->isClean() ? 'fg-green' : 'fg-yellow';
+
+        $branchSegment = $summary->isDetached
+            ? "⎇ detached @{$summary->headSha}"
+            : "<style='{$statusColor}'>●</style> <style='{$statusColor}'>{$summary->branch}</style>";
+
+        $changeCue = $summary->isClean()
+            ? "<style='fg-green'>✓ clean</style>"
+            : "<style='fg-yellow'>✚ {$summary->changeCount} changes</style>";
+
+        return "{$name}  {$branchSegment}  {$changeCue}" . $this->renderAheadBehind($summary);
+    }
+
+    private function renderAheadBehind(GitSummary $summary): string
+    {
+        $suffix = '';
+
+        if ($summary->aheadCount !== null && $summary->aheadCount > 0) {
+            $suffix .= "  <style='fg-cyan'>↑{$summary->aheadCount}</style>";
+        }
+
+        if ($summary->behindCount !== null && $summary->behindCount > 0) {
+            $suffix .= "  <style='fg-cyan'>↓{$summary->behindCount}</style>";
+        }
+
+        return $suffix;
     }
 }
